@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR AR Clue</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ece9e6, #ffffff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .game-container {
+      text-align: center;
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .clue {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    .piece {
+      margin-top: 1rem;
+      font-size: 2rem;
+    }
+    .progress {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #28a745;
+    }
+    canvas#confetti {
+      position: fixed;
+      pointer-events: none;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+  <div class="game-container">
+    <h2>You've Discovered a Clue!</h2>
+    <p class="clue"></p>
+    <div class="piece"></div>
+    <div class="progress"></div>
+  </div>
+
+  <script>
+    const clues = {
+      qr1: { clue: "Collect the first piece near the red bench.", piece: "🧩 Piece 1", step: 1 },
+      qr2: { clue: "Well done! Look for the tallest tree.", piece: "🧩 Piece 2", step: 2 },
+      qr3: { clue: "Great! Go to the library entrance.", piece: "🧩 Piece 3", step: 3 },
+      qr4: { clue: "You're doing great. Find the fountain.", piece: "🧩 Piece 4", step: 4 },
+      qr5: { clue: "Halfway there! Check the big clock.", piece: "🧩 Piece 5", step: 5 },
+      qr6: { clue: "Look around the food court.", piece: "🧩 Piece 6", step: 6 },
+      qr7: { clue: "Visit the play area.", piece: "🧩 Piece 7", step: 7 },
+      qr8: { clue: "Almost done. Head to the skate park.", piece: "🧩 Piece 8", step: 8 },
+      qr9: { clue: "Final push! Exit gate holds the clue.", piece: "🧩 Piece 9", step: 9 },
+      qr10: { clue: "You did it! Final piece collected! 🎉", piece: "🧩 Piece 10", step: 10 },
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const qrCode = params.get("qr");
+
+    const clueElement = document.querySelector(".clue");
+    const pieceElement = document.querySelector(".piece");
+    const progressElement = document.querySelector(".progress");
+
+    if (qrCode && clues[qrCode]) {
+      const { clue, piece, step } = clues[qrCode];
+      clueElement.textContent = clue;
+      pieceElement.textContent = piece;
+      progressElement.textContent = `Progress: ${step} / 10`;
+
+      if (step === 10) {
+        launchConfetti();
+      }
+    } else {
+      clueElement.textContent = "Invalid or missing QR code. Please scan a valid QR.";
+    }
+
+    // Confetti animation for final step
+    function launchConfetti() {
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const confetti = Array.from({ length: 150 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 5 + 1,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confetti.forEach(c => {
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+          ctx.fillStyle = c.color;
+          ctx.fill();
+        });
+        update();
+        requestAnimationFrame(draw);
+      }
+
+      function update() {
+        confetti.forEach(c => {
+          c.y += c.d;
+          if (c.y > canvas.height) {
+            c.y = -10;
+            c.x = Math.random() * canvas.width;
+          }
+        });
+      }
+
+      draw();
+    }
+  </script>
+</body>
+</html>
