@@ -3,72 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AR Puzzle Game</title>
+  <title>QR Puzzle AR Game</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ece9e6, #ffffff);
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      background: #f8f8f8;
-      min-height: 100vh;
-      text-align: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      overflow: hidden;
     }
-    h1 { margin-bottom: 0.5rem; }
-    .clue, .progress {
-      font-size: 1.2rem;
-      margin: 1rem 0;
+    .game-container {
+      text-align: center;
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 420px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
     model-viewer {
       width: 100%;
-      max-width: 400px;
-      height: 400px;
-      background: #eee;
-      border-radius: 12px;
+      height: 300px;
       margin: 1rem 0;
+      background: #f9f9f9;
+      border-radius: 1rem;
+    }
+    .clue { font-size: 1.1rem; margin-top: 1rem; }
+    .progress { margin-top: 1rem; font-weight: bold; color: #28a745; }
+    canvas#confetti {
+      position: fixed;
+      pointer-events: none;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
     }
   </style>
 </head>
 <body>
-  <h1>🔍 You've Found a Puzzle Piece!</h1>
-  <div class="clue"></div>
-
-  <model-viewer id="model" camera-controls auto-rotate ar ar-modes="webxr scene-viewer quick-look" alt="Puzzle Piece"></model-viewer>
-
-  <div class="progress"></div>
+  <canvas id="confetti"></canvas>
+  <div class="game-container">
+    <h2>You've Found a Clue!</h2>
+    <model-viewer id="model" camera-controls ar ar-modes="webxr scene-viewer quick-look" auto-rotate alt="Puzzle Piece"></model-viewer>
+    <p class="clue"></p>
+    <div class="progress"></div>
+  </div>
 
   <script>
     const clues = {
-      1: "📍 Clue 1: Find the red bench.",
-      2: "📍 Clue 2: Tallest tree nearby.",
-      3: "📍 Clue 3: Entrance of the library.",
-      4: "📍 Clue 4: Look near the fountain.",
-      5: "📍 Clue 5: Big clock hides the clue.",
-      6: "📍 Clue 6: Explore the food court.",
-      7: "📍 Clue 7: Go to the play area.",
-      8: "📍 Clue 8: Skate park awaits.",
-      9: "📍 Clue 9: Exit gate has something.",
-      10: "🎉 Final Clue: You've made it!"
+      1: { clue: "Collect the first piece near the red bench.", step: 1 },
+      2: { clue: "Well done! Look for the tallest tree.", step: 2 },
+      3: { clue: "Great! Go to the library entrance.", step: 3 },
+      4: { clue: "You're doing great. Find the fountain.", step: 4 },
+      5: { clue: "Halfway there! Check the big clock.", step: 5 },
+      6: { clue: "Look around the food court.", step: 6 },
+      7: { clue: "Visit the play area.", step: 7 },
+      8: { clue: "Almost done. Head to the skate park.", step: 8 },
+      9: { clue: "Final push! Exit gate holds the clue.", step: 9 },
+      10: { clue: "You did it! Final piece collected! 🎉", step: 10 }
     };
 
     const params = new URLSearchParams(window.location.search);
     const qr = parseInt(params.get("qr"));
+    const modelViewer = document.getElementById("model");
+    const clueElement = document.querySelector(".clue");
+    const progressElement = document.querySelector(".progress");
 
-    const clueBox = document.querySelector(".clue");
-    const progressBox = document.querySelector(".progress");
-    const modelViewer = document.querySelector("#model");
+    if (qr && clues[qr]) {
+      const { clue, step } = clues[qr];
+      clueElement.textContent = clue;
+      progressElement.textContent = `Progress: ${step} / 10`;
 
-    if (qr && qr >= 1 && qr <= 10) {
-      clueBox.textContent = clues[qr];
-      progressBox.textContent = `🧩 Progress: Piece ${qr} of 10`;
-      modelViewer.setAttribute("src", `models/piece${qr}.glb`);
+      
+      modelViewer.setAttribute("src", `https://pras125.github.io/qr-hunt/models%202/piece${qr}.glb`);
+
+      if (step === 10) {
+        launchConfetti();
+      }
     } else {
-      clueBox.textContent = "⚠️ Invalid or missing QR code.";
-      modelViewer.style.display = "none";
-      progressBox.textContent = "";
+      clueElement.textContent = "Invalid or missing QR code. Please scan a valid QR.";
+    }
+
+    // 🎉 Confetti effect for final piece
+    function launchConfetti() {
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const confetti = Array.from({ length: 150 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 5 + 1,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confetti.forEach(c => {
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+          ctx.fillStyle = c.color;
+          ctx.fill();
+        });
+        update();
+        requestAnimationFrame(draw);
+      }
+
+      function update() {
+        confetti.forEach(c => {
+          c.y += c.d;
+          if (c.y > canvas.height) {
+            c.y = -10;
+            c.x = Math.random() * canvas.width;
+          }
+        });
+      }
+
+      draw();
     }
   </script>
 </body>
